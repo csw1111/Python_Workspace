@@ -1,0 +1,39 @@
+decimal3 = "".join(decimal_lst)
+print(str(integer_bin)+'.'+decimal3)
+decimal_lst = [] # 10진수 소수를 2진수 소수로 변환하면서 저장/Store while converting decimal decimal to binary decimal
+c = 0
+
+a = input("숫자를 입력하세요: ")
+
+idx = a.find('.')
+integer = int(a[:idx]) # 정수/integer
+decimal = float('0.'+str(a[idx+1:])) # 소수/decimal
+
+integer_bin = str(bin(integer))
+integer_bin = int(integer_bin[2:]) # 10진수 정수를 2진수로 변환/Convert decimal integer to binary
+
+while True:
+    c += 1
+    if c == 1:
+        global decimal_2
+        decimal2 = decimal *2
+        decimal_f = int(str(decimal2)[2]) # 첫 번째 결과의 소수점 /Store decimal point for first result
+        print(str(decimal2)[2], str(decimal2)[2])
+        print(decimal2)
+    else:
+        decimal2 *= 2
+    if decimal2 > 1:
+        decimal_lst.append(str(decimal2)[0])
+        decimal2 = decimal2-1
+    else:
+        decimal_lst.append('0') 
+    if decimal2 == 1 or decimal2 == 1.0:
+        decimal_lst.append('1')
+        break
+    elif int(str(decimal2)[2]) == decimal_f and c != 1:
+        break
+    else:
+        pass
+    
+decimal3 = "".join(decimal_lst)
+print(str(integer_bin)+'.'+decimal3)
