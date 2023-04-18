@@ -1,0 +1,492 @@
+from PyQt5 import QtCore, QtGui, QtWidgets
+from openpyxl import load_workbook,Workbook
+from openpyxl.styles import Font,  Alignment
+P = "D:\\python\\프로젝트\\"
+class Ui_Dialog(object):
+
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("출석체크") ## UI창 이름
+        Dialog.resize(654, 643)## 창 크기
+
+        self.name_list = QtWidgets.QListWidget(Dialog)
+        self.name_list.setGeometry(QtCore.QRect(40, 60, 291, 531)) ## label 위치 및 크기 조절
+        font = QtGui.QFont() ## 글자 정보
+        font.setPointSize(15) ## 글자 크기
+        font.setBold(True) ## 글자 두껍게
+        font.setWeight(75)
+        self.name_list.setFont(font) ## 글자 폰트를 font로 적용
+        self.name_list.setObjectName("label")  ## label(이름 입력)이름
+
+        import datetime
+        # ##### 달이 넘어가면 이름을 정렬해서 엑셀에 저장 #####
+        d = datetime.datetime.now() ## 현제 날짜의 정보를 d에 저장
+        Month = d.month ## 현제 달의 정보를 Month에 저장
+        Year = d.year ## 현제 년도의 정보를 Year에 저장
+        try:
+            wb = load_workbook(str(Year)+'년 ' + str(Month)+'월 출석.xlsx') ## 달이 넘어가고 처음 실행 하지 않았으면 pass
+            wb.close()
+        except:
+            make(Year,Month)
+            wb = load_workbook(str(Year)+'년 ' + str(Month)+'월 출석.xlsx') ## 달이 넘어가고 처음 실행 했으면 새로운 파일 생성
+            wb.close()
+
+        ### 삭제한 이름은 뺴고 리스트에 출력 ###
+        nf = open("Cname.txt",'rt')
+        Totalname = nf.readline() ## Totalname의 내용을 문자열로 받아옴
+        Totalname = Totalname.strip() ## 양 쪽의 공백을 제거(내용을 입력하고 공백을 입력하기 때문에 마지막에 공백이 생김)
+        Totalname = Totalname.split(" ") ## 공백 기준으로 리스트를 만듬
+        self.name_list.clear() ## name_list의 내용을 지운다
+        for x in Totalname:
+            self.name_list.addItem(x) ## name_list에 x값을 보여준다
+        self.name_list.setObjectName("namelist")
+        self.name_list.itemClicked.connect(self.name) ## name_list의 값을 눌렀으면 name함수 실행
+
+        self.check = QtWidgets.QPushButton(Dialog)
+        self.check.setGeometry(QtCore.QRect(410, 390, 171, 71))
+        font = QtGui.QFont()
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.check.setFont(font)
+        self.check.setObjectName("check")
+        self.check.clicked.connect(self.ck) ## check버튼을 눌렀으면 ck함수 실행
+
+        self.calendarWidget = QtWidgets.QCalendarWidget(Dialog)
+        self.calendarWidget.setGeometry(QtCore.QRect(370, 80, 272, 183))
+        self.calendarWidget.setObjectName("calendarWidget")
+        self.calendarWidget.clicked.connect(self.xl) ## calendarWidget버튼을 눌렀으면 xl함수 실행
+        
+        self.textBrowser = QtWidgets.QTextBrowser(Dialog)
+        self.textBrowser.setGeometry(QtCore.QRect(390, 310, 221, 51))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.textBrowser.setFont(font)
+        
+        self.textBrowser.setObjectName("textBrowser")
+
+        self.check_2 = QtWidgets.QPushButton(Dialog)
+        self.check_2.setGeometry(QtCore.QRect(410, 500, 171, 71))
+        font = QtGui.QFont()
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.check_2.setFont(font)
+        self.check_2.setObjectName("check_2")
+        self.check_2.clicked.connect(self.clear) ## check_2버튼을 눌렀으면 clear함수 실행
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+    
+    def xl(self):
+        import datetime
+        d = datetime.datetime.now()
+        x = self.calendarWidget.selectedDate() ## calendarWidget을 눌렀으면 년도, 월, 일의 정보들를 x에 저장
+        global Year, Month, Day ## 전역변수로 Year, Month, Day 선언
+        Year = x.year() ## x의 년도를 Year에 저장
+        Month = x.month() ## x의 달을 Month에 저장
+        Day = x.day() ## x의 일을 Day 저장
+        if d.year < Year: ## x의 년도가 현제 년도보다 크다면 Year, Month, Day는 현제의 년,월,일 이다(미래에 출석하는 일은 없기 때문이다)
+            Year = d.year
+            Month = d.month
+            Day = d.day
+        elif d.year == Year and d.month < Month: ## x의 년도가 현제의 년도랑 같고 x의 달이 현제의 달보다 크다면 Month, Day는 현제의 월, 일이다(미래에 출석하는 일은 없기 때문이다)
+            Month = d.month
+            Day = d.day
+        elif d.year == Year and d.month == Month and d.day < Day: ## x의 년도, 달이 현제의 년도, 달과 같고, x의 달이 현제의 달보다 크다면  Day는 현제의 일 이다(미래에 출석하는 일은 없기 때문이다)
+            Day = d.day
+        
+    def name(self):
+        self.textBrowser.setPlainText(self.name_list.currentItem().text()) ## textBrowser에 name_list에서 선택한 값을 보여준다
+
+    def ck(self):
+        nf = open("Totalname.txt",'rt')
+        Totalname = nf.readline() ## Totalname메모장 내용을 문자열로 받아옴
+        Totalname = Totalname.split(" ") ## Totalname을 리스트로 변환
+        nf.close()
+        import datetime
+        d = datetime.datetime.now()
+        Y = d.year
+        M = d.month
+        D = d.day
+        global N ## N을 전역변수로 저장
+        N = self.name_list.currentItem().text() ## name_list에서 선택한 값을 N에 저장
+
+        try: ## Year, Month값(calendarWidget을 눌러서 Year, Month값)이 있으면 try함수 실행 / 없다면 except함수 실행
+            try: 
+                wb = load_workbook(str(Year)+"년 "+str(Month)+"월 출석.xlsx") ## Year년 Month월 춣석 파일이 있으면 파일 열기
+            except:
+                make(Year, Month) ## Year년 Month월 춣석 파일이 없으면 파일을 생성하기
+                wb = load_workbook(str(Year)+"년 "+str(Month)+"월 출석.xlsx") 
+            ws = wb.active
+            for x in range(len(Totalname)):
+                ws["A"+str(4+x)] = Totalname[x]  ## A열4행부터 Totalname의 값들을 입력한다
+
+            from datetime import datetime
+            if Month == 1 or Month == 3 or Month == 5 or Month == 7 or Month == 8 or Month == 10 or Month == 12: ## 1,3,5,7,8,10,12월은 31일까지 있다
+                d = 31
+            elif Month == 4 or Month == 6 or Month == 9 or Month == 11: ## 4,6,9,11,월은 30일까지 있다
+                d = 30
+            else:
+                if Year % 4 == 0:
+                    if Year % 100 == 0 and Year % 400 != 0: ## 윤년이 아닐 떄는 28일 까지 있다
+                        d = 28
+                    else: ## 윤년이면 29일 까지 있다
+                        d = 29
+                else: ## 윤년이 아닐 때는 28일 까지 있다
+                    d = 28
+            lst = [] ## 주중인 날짜를 저장하는 리스트
+            for x in range(d):
+                today = datetime(Year, Month, x+1) ## 요일을 0~6까지 저장한다(월:0~일:6)
+                if today.weekday() >=5: ## 주말일 때는 저장을 안한다
+                    pass
+                else:
+                    lst.append(x+1) ## 주말이 아니면 저장한다
+            try:
+                x = lst.index(Day) ## calendarWidget을 눌러서 Day값이 있으면 lst안의 Day값의 인덱스 값을 x에 저장한다
+            except:
+                x = lst.index(D) ## Day값이 없으면 lst안의 Day값의 인덱스를 x에 저장한다
+            a = 99+x ## C열부터 lst값을 입력하기 떄문에 아스키코드값인 99에서 x를 더한다
+            if a > 122:
+                a = chr(a//122+96) + chr(a-26) ## Z열이 넘어간다면 AA열로 넘어간다.(AZ열을 넘어가면 BA열로 넘어간다) a의 값을 알파벳으로 전환한다
+            else:
+                a = chr(a) ## a의 값을 알파벳으로 전환한다
+            
+            m = len(lst) 
+            m = 98+m ## 열의 최대열의 아스키코드값을 구한다
+            m = chr(m) ## 아스키코드값을 알파벳으로 전환한다
+            ws['B3'] = "출석일" ## B3에 출석일을 입력한다
+            for x in range(len(Totalname)-1):
+                ws["B"+str(4+x)] = "=CountA(C"+str(4+x)+":"+m+str(4+x)+")"+'&"일"' ## B열4행부터 출석일을 구한다(엑셀 함수를 셀에 입력해서 출석일을 구한다)
+            idx = Totalname.index(N) ## Totalname에서 N값의 인덱스를 idx에 저장한다
+            ws[a+str(4+idx)] = 'O' ## 선택한 사람의 출석한 일에 'O'입력한다
+            wb.save(str(Year)+"년 "+str(Month)+"월 출석.xlsx")## 저장
+            wb.close()## 닫기
+
+        except:
+            try:
+                wb = load_workbook(str(Y)+"년 "+str(M)+"월 출석.xlsx") ## Y년 M월 출석 파일이 있으면 파일 열기
+            except:
+                make(Y,M) ## Y년 M월 출석 파일이 없으면 파일 만들기
+                wb = load_workbook(str(Y)+"년 "+str(M)+"월 출석.xlsx") 
+            ws = wb.active
+            for x in range(len(Totalname)):
+                ws["A"+str(4+x)] = Totalname[x]
+            from datetime import datetime, date
+            lst = []
+            if M == 1 or M == 3 or M == 5 or M == 7 or M == 8 or M == 10 or M == 12:
+                d = 31
+            elif M == 4 or M == 6 or M == 9 or M == 11:
+                d = 30
+            else:
+                if Y % 4 == 0:
+                    if Y % 100 == 0 and Y % 400 != 0:
+                        d = 28
+                    else:
+                        d = 29
+                else:
+                    d = 28
+            for x in range(d):
+                today = datetime(Y, M, x+1)  
+                if today.weekday() >=5:
+                    pass
+                else:
+                    lst.append(x+1)
+            try:
+                x = lst.index(Day)
+            except:
+                x = lst.index(D)
+            a = 99+x
+            if a > 122:
+                a = chr(a//122+96) + chr(a-26)
+            else:
+                a = chr(a)       
+
+            m = len(lst)
+            m = 98+m
+            m = chr(m)
+            ws['B3'] = "출석일"
+            for x in range(len(Totalname)-1):
+                ws["B"+str(4+x)] = "=CountA(C"+str(4+x)+":"+m+str(4+x)+")"+'&"일"'   
+            idx = Totalname.index(N)
+            ws[a+str(4+idx)] = 'O'
+            wb.save(str(Y)+"년 "+str(M)+"월 출석.xlsx")
+            wb.close()
+
+    def clear(self):
+        nf = open("Totalname.txt",'rt')
+        Totalname = nf.readlines()
+        Totalname = "".join(Totalname)
+        Totalname = Totalname.split(" ")
+        nf.close()
+        import datetime
+        d = datetime.datetime.now()
+        Y = d.year
+        M = d.month
+        D = d.day
+        global N
+        N = self.name_list.currentItem().text()
+
+        try:
+            try:
+                wb = load_workbook(str(Year)+"년 "+str(Month)+"월 출석.xlsx")
+            except:
+                make(Year, Month)
+                wb = load_workbook(str(Year)+"년 "+str(Month)+"월 출석.xlsx")
+            ws = wb.active
+            for x in range(len(Totalname)):
+                ws["A"+str(4+x)] = Totalname[x]
+            # d = datetime.datetime.now()
+            from datetime import datetime, date
+            lst = []
+            if Month == 1 or Month == 3 or Month == 5 or Month == 7 or Month == 8 or Month == 10 or Month == 12:
+                d = 31
+            elif Month == 4 or Month == 6 or Month == 9 or Month == 11:
+                d = 30
+            else:
+                if Year % 4 == 0:
+                    if Year % 100 == 0 and Year % 400 != 0:
+                        d = 28
+                    else:
+                        d = 29
+                else:
+                    d = 28
+            for x in range(d):
+                today = datetime(Year, Month, x+1)  
+                if today.weekday() >=5:
+                    pass
+                else:
+                    lst.append(x+1)
+            try:
+                x = lst.index(Day)
+            except:
+                x = lst.index(D)
+            a = 99+x
+            if a > 122:
+                a = chr(a//122+96) + chr(a-26)
+            else:
+                a = chr(a)
+            
+            m = len(lst)
+            m = 98+m
+            m = chr(m)
+            ws['B3'] = "출석일"
+            for x in range(len(Totalname)-1):
+                ws["B"+str(4+x)] = "=CountA(C"+str(4+x)+":"+m+str(4+x)+")"+'&"일"'   
+            idx = Totalname.index(N)
+            ws[a+str(4+idx)] = ''
+            wb.save(str(Year)+"년 "+str(Month)+"월 출석.xlsx")
+            wb.close()
+
+        except:
+            try:
+                wb = load_workbook(str(Y)+"년 "+str(M)+"월 출석.xlsx")
+            except:
+                make(Y,M)
+                wb = load_workbook(str(Y)+"년 "+str(M)+"월 출석.xlsx")
+            ws = wb.active
+            for x in range(len(Totalname)):
+                ws["A"+str(4+x)] = Totalname[x]
+            from datetime import datetime, date
+            lst = []
+            if M == 1 or M == 3 or M == 5 or M == 7 or M == 8 or M == 10 or M == 12:
+                d = 31
+            elif M == 4 or M == 6 or M == 9 or M == 11:
+                d = 30
+            else:
+                if Y % 4 == 0:
+                    if Y % 100 == 0 and Y % 400 != 0:
+                        d = 28
+                    else:
+                        d = 29
+                else:
+                    d = 28
+            for x in range(d):
+                today = datetime(Y, M, x+1)  
+                if today.weekday() >=5:
+                    pass
+                else:
+                    lst.append(x+1)
+            try:
+                x = lst.index(Day)
+            except:
+                x = lst.index(D)
+            a = 99+x
+            if a > 122:
+                a = chr(a//122+96) + chr(a-26)
+            else:
+                a = chr(a)       
+
+            m = len(lst)
+            m = 98+m
+            m = chr(m)
+            ws['B3'] = "출석일"
+            for x in range(len(Totalname)-1):
+                ws["B"+str(4+x)] = "=CountA(C"+str(4+x)+":"+m+str(4+x)+")"+'&"일"'   
+            idx = Totalname.index(N)
+            ws[a+str(4+idx)] = ''
+            wb.save(str(Y)+"년 "+str(M)+"월 출석.xlsx")
+            wb.close()
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "출석체크"))
+        self.check.setText(_translate("Dialog", "출석"))
+        self.textBrowser.setHtml(_translate("Dialog", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'맑은 고딕\'; font-size:15pt; font-weight:600; font-style:normal;\">\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">""</p></body></html>"))
+        self.check_2.setText(_translate("Dialog", "취소"))
+
+def make(Y, M):
+    nf  = open("Cname.txt","rt")
+    Nf = open("Totalname.txt",'w')
+    Cn = nf.readline()
+    Cn = Cn.strip()
+    Cn = Cn.split(' ')
+    Cn = sorted(Cn)
+    Cn = " ".join(Cn)
+    Nf.write(Cn)
+    nf.close()
+    Nf.close()
+    
+    Totalname = Cn.split(" ")
+    Totalname = sorted(Totalname)
+    T = " ".join(Totalname)
+    nf = open("Totalname.txt",'w')
+    NF = open("Cname.txt",'w')
+    NF.write(T+" ")
+    NF.close()
+    nf.write(T+" ")
+    nf.close()
+
+    nf = open("Totalname.txt",'rt')
+    Totalname = nf.readlines()
+    Totalname = "".join(Totalname)
+    Totalname = Totalname.split(" ")
+    nf.close()
+    del Totalname[-1]
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = str(Y) + "년" + str(M) + "월" +"출석"
+    f = Font(size = 20, bold = True)
+    ws['A1'] = str(M) + "월"
+    ws.merge_cells("A1:B1")
+    a = ws['A1']
+    a.alignment = Alignment(horizontal='center', vertical='center')
+    a.font = f
+    for x in range(len(Totalname)):
+        ws["A"+str(4+x)] = Totalname[x]
+
+    if M == 1 or M == 3 or M == 5 or M == 7 or M == 8 or M == 10 or M == 12:
+        from datetime import datetime, date
+        lst = []
+        for x in range(31):
+            today = datetime(Y, M, x+1)  
+            if today.weekday() >=5:
+                pass
+            else:
+                lst.append(x+1)
+
+        for x in range(len(lst)):
+            a = 99+x
+            if a > 122:
+                a = chr(a//122+96) + chr(a-26)
+            else:
+                a = chr(a)
+            ws[a+'3'] = str(lst[x])+"일"  
+        
+    elif M == 4 or M == 6 or M == 9 or M == 11:
+        from datetime import datetime, date
+        lst = []
+        for x in range(30):
+            today = datetime(Y, M, x+1)  
+            if today.weekday() >=5:
+                pass
+            else:
+                lst.append(x+1)
+
+        for x in range(len(lst)):
+            a = 99+x
+            if a > 122:
+                a = chr(a//122+96) + chr(a-26)
+            else:
+                a = chr(a)
+            ws[a+'3'] = str(lst[x])+"일"
+
+    else:
+        if Y % 4 == 0:
+            if Y % 100 == 0 and Y % 400 != 0:
+                from datetime import datetime, date
+                lst = []
+                for x in range(28):
+                    today = datetime(Y, M, x+1)  
+                    if today.weekday() >=5:
+                        pass
+                    else:
+                        lst.append(x+1)
+
+                for x in range(len(lst)):
+                    a = 99+x
+                    if a > 122:
+                        a = chr(a//122+96) + chr(a-26)
+                    else:
+                        a = chr(a)
+                    ws[a+'3'] = str(lst[x])+"일"
+                    
+            else:
+                from datetime import datetime, date
+                lst = []
+                for x in range(29):
+                    today = datetime(Y, M, x+1)  
+                    if today.weekday() >=5:
+                        pass
+                    else:
+                        lst.append(x+1)
+
+                for x in range(len(lst)):
+                    a = 99+x
+                    if a > 122:
+                        a = chr(a//122+96) + chr(a-26)
+                    else:
+                        a = chr(a)
+                    ws[a+'3'] = str(lst[x])+"일"
+
+        else:
+            from datetime import datetime, date
+            lst = []
+            for x in range(28):
+                today = datetime(Y, M, x+1)  
+                if today.weekday() >=5:
+                    pass
+                else:
+                    lst.append(x+1)
+
+            for x in range(len(lst)):
+                a = 99+x
+                if a > 122:
+                    a = chr(a//122+96) + chr(a-26)
+                else:
+                    a = chr(a)
+                ws[a+'3'] = str(lst[x])+"일"
+    m = len(lst)
+    m = 98+m
+    m = chr(m)
+    ws['B3'] = "출석일"
+    for x in range(len(Totalname)):
+        ws["B"+str(4+x)] = "=CountA(C"+str(4+x)+":"+m+str(4+x)+")"+'&"일"'
+    wb.save(str(Y)+"년 "+str(M)+"월 출석.xlsx")
+    wb.close()
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    Dialog = QtWidgets.QDialog()
+    ui = Ui_Dialog()
+    ui.setupUi(Dialog)
+    Dialog.show()
+    sys.exit(app.exec_())
