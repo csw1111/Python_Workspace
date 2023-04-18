@@ -1,0 +1,195 @@
+from PyQt5 import QtCore, QtGui, QtWidgets ## UI 실행
+from openpyxl import load_workbook,Workbook ## 엑셀 제어
+from openpyxl.styles import Font ## 글자크기 및 글꼴 제어
+
+class Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("학생 등록")  ## UI 창 이름
+        Dialog.resize(740, 634) ## 창 크기
+
+        self.label = QtWidgets.QLabel(Dialog)
+        self.label.setGeometry(QtCore.QRect(30, 140, 131, 51)) ## label 위치 및 크기 조절
+        font = QtGui.QFont() ## 글자 정보
+        font.setPointSize(20) ## 글자 크기
+        font.setBold(True) ## 글자 두껍게
+        font.setWeight(75) 
+        self.label.setFont(font) ## 글자 폰트를 font로 적용
+        self.label.setObjectName("label")  ## label(이름 입력)이름
+
+        self.namelist = QtWidgets.QListWidget(Dialog)
+        self.namelist.setGeometry(QtCore.QRect(340, 20, 251, 561))
+        font = QtGui.QFont()
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.namelist.setFont(font)
+        try:
+            nf = open("Cname.txt","rt") ## 이름을 삭제하거나 추가하면 업데이트되는 메모장
+            nametotal = nf.readline() ## 메모장 내용을 문자열로 불러옴
+            nametotal = nametotal.strip() ## 양 쪽 공백들 제거(문자 사이의 공백은 안사라짐)
+            nametotal = nametotal.split(" ") ## 문자열을 공백기준으로 리스트로 변환
+            self.namelist.clear() ## namelist(위젯)내용들을 제거
+            for x in nametotal: ## nametotal의 리스트 값들을 x에 대입한다
+                self.namelist.addItem(x) ## namelist(위젯)에 x들을 보여준다
+        except:
+            pass
+        ## try/except를 사용한 이유 : 처음 실행하면 Cname.txt가 없기 때문에 실행하면 오류나기 때문에 사용함. 
+        ## Cname.txt를 불러와서 namelist(위젯)에 보여줘야지 프로그램을 실행 했을 때 기존에 있는 이름을 보여줄 수 있다.
+        self.namelist.setObjectName("namelist")
+
+        self.save = QtWidgets.QPushButton(Dialog)
+        self.save.setGeometry(QtCore.QRect(220, 290, 111, 61))
+        font = QtGui.QFont()
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.save.setFont(font)
+        self.save.setObjectName("save") 
+        self.save.clicked.connect(self.sv) ## save버튼을 눌렀다면 sv함수 실행
+
+        self.delet = QtWidgets.QPushButton(Dialog)
+        self.delet.setGeometry(QtCore.QRect(610, 290, 111, 61))
+        font = QtGui.QFont()
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.delet.setFont(font)
+        self.delet.setObjectName("delet")
+        self.delet.clicked.connect(self.clear) ## delet버튼을 눌렀다면 clear함수 실행
+
+        self.name = QtWidgets.QTextEdit(Dialog)
+        self.name.setGeometry(QtCore.QRect(30, 200, 181, 61))
+        self.name.setObjectName("name")
+
+        self.month = QtWidgets.QTextEdit(Dialog)
+        self.month.setGeometry(QtCore.QRect(30, 380, 181, 61))
+        self.month.setObjectName("month")
+
+        self.pay = QtWidgets.QLabel(Dialog)
+        self.pay.setGeometry(QtCore.QRect(30, 320, 131, 51))
+        font = QtGui.QFont()
+        font.setPointSize(20)
+        font.setBold(True)
+        font.setWeight(75)
+        self.pay.setFont(font)
+        self.pay.setObjectName("pay")
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def sv(self):
+        nf = open("Totalname.txt", "a") ## 이름이 삭제되면 새로운 출석 파일이 생겨야지 내용이 업데이트되는 메모장 / 추가되면 내용이 업데이트 되는 메모장 
+        NF = open("Cname.txt", "a") ## 이름을 삭제하거나 추가하면 업데이트되는 메모장
+        NN = open("YCname.txt", "a") ## 이름이 삭제되면 새로운 결제 파일이 생겨야지 내용이 업데이트되는 메모장 / 추가되면 내용이 업데이트되는 메모장
+        T = self.name.toPlainText() ## name입력에 입력된 내용을 T에 저장
+        nf.write(T+" ") ## Totalname에 T내용 저장
+        NF.write(T+" ") ## Cname T내용 저장
+        NN.write(T+" ") ## YCname T내용 저장
+        ### 마지막에 공백을 넣는 이유 : 공백 기준으로 이름을 구별하기 위해 공백을 마지막에 넣는다
+        nf.close() 
+        NF.close()
+        NN.close()
+        ### 메모장 내용을 저장하기 위해 닫는다
+        
+        nf = open("Cname.txt","rt") 
+        nametotal = nf.readline()
+        nf.close()
+        nametotal = nametotal.split(" ")
+        nameNew_list = [] ## 중복된 값이 없에기 위해 만든 리스트
+
+        for v in nametotal: ## nametotal의 값들을 v에 넣는다
+            if v not in nameNew_list: ## nameNew_list에 v값이 없다면 nameNew_list에 추가하고, 있다면 추가안한다.
+                nameNew_list.append(v)
+
+        if nameNew_list != nametotal: ## 만약 중복된 값이 있어서 nameNew_list과 nametotal 다르다면 nameNew_list의 값을 메모장에 저장한다
+            nf = open("Totalname.txt", "w")
+            NF = open("Cname.txt", "w") 
+            N = open("YCname.txt", "w")
+            nameNew_list = " ".join(nameNew_list) ## nameNew_list를 공백을 합쳐서 문자열로 변환
+            nf.write(nameNew_list)
+            NF.write(nameNew_list)
+            N .write(nameNew_list)
+            NF.close()
+            N.close()
+            nf.close()
+
+        nf = open("Cname.txt","rt")
+        nametotal = nf.readline() ## Cname메모장의 내용을 문자열로 불러옴
+        nametotal = nametotal.strip()
+        nametotal = nametotal.split(" ") ## nametotal을 리스트로 변환
+        nf.close()
+        self.namelist.clear() ## namelist(위젯)내용을 제거
+        for x in nametotal: 
+            self.namelist.addItem(x) ## namelist(위젯)에 x값들을 보여준다
+        #결제 엑셀
+        nf = open("YCname.txt","rt")
+        nametotal = nf.readline()
+        nametotal = nametotal.split(" ")
+        nf.close()
+        import datetime 
+        d = datetime.datetime.now() ## 현제의 날짜 정보를 d에 저장
+        Y = d.year ## 현제 날짜의 년도를 Y에 저장
+        try:
+            wb = load_workbook(str(Y)+"년 결제.xlsx") ## 현제 년도의 결제 파일이 있다면 불러오기
+        except:
+            wb = Workbook() ## 현제 년도의 결제 파일이 없다면 만들기
+        ws = wb.active
+        ws.title = "결제한 월" ## 파일 sheet이름을 '결제한 월'로 입력
+        f = Font(size=20, bold = True) ## f에 폰트 정보를 저장
+        ws['A1'] = str(Y)+"년" ## A1셀에 현제 년도+"년"을 입력
+        ws.merge_cells("A1:B1") ## A1, B1을 병합
+        a = ws['A1'] ## A1셀의 위치를 a에 저장
+        a.font = f ## a셀에 폰트 f를 적용
+        for x in range(len(nametotal)):
+            ws["A"+str(4+x)] = nametotal[x] ## A열4행부터 nametotal의 값(0번째 부터 끝까지)을 A열에 입력 
+        for x in range(12):
+            ws[chr(98+x)+'3'] = str(x+1)+"월" ## B열 부터 M열까지 1월 부터 12월까지 입력
+        idx = nametotal.index(T) ## nametotal에 T값이 있는 인덱스를 idx에 저장
+        ws[chr(97+int(self.month.toPlainText()))+str(4+idx)] = str(d.month)+"월"+str(d.day)+"일" ## 선택한 사람의 행/month에 입력한 월의 열에 현제 월, 일을 입력한다.
+        wb.save(str(Y)+"년 결제.xlsx") ## 파일 저장
+        wb.close() ## 파일 닫기
+
+        self.name.setText("") ## name(위젯)을 공백으로 변환
+        self.month.setText("") ## month(위젯)을 공백으로 변환
+
+    def clear(self):    
+        a = self.namelist.currentRow() ## 선택한 위치의 열값을 a에 저장
+        self.namelist.takeItem(a) ## namelist에 a행의 값을 제거
+
+        nf = open("Cname.txt", "rt")
+        nametotal = nf.readline()
+        nf.close()
+        nametotal = nametotal.split(" ") ## nametotal을 리스트로 변환
+        del nametotal[a] ## nametotal의 a인덱스 값을 제거
+        nametotal = " ".join(nametotal) ## 공백으로 nametotal값들을 합쳐서 문자열로 변환
+        nf = open("Cname.txt", "w")
+        nf.write(nametotal) ## 삭제된 값이 업데이트된 nametotal을 Cname메모장에 입력
+        nf.close()
+        nf = open("Cname.txt", "rt")
+        nametotal = nf.readline()
+        nf.close()
+        if nametotal == "":
+            Nf = open("Totalname.txt","w")
+            Nf.write("")
+            Nf.close()
+            NF = open("Cname.txt","w")
+            NF.write("")
+            NF.close()
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "학생 등록"))
+        self.label.setText(_translate("Dialog", "<html><head/><body><p><span style=\" font-size:20pt; font-weight:600;\">이름 입력</span></p></body></html>"))
+        self.save.setText(_translate("Dialog", "저장"))
+        self.delet.setText(_translate("Dialog", "삭제"))
+        self.pay.setText(_translate("Dialog", "<html><head/><body><p>결제 월</p></body></html>"))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    Dialog = QtWidgets.QDialog()
+    ui = Ui_Dialog()
+    ui.setupUi(Dialog)
+    Dialog.show()
+    sys.exit(app.exec_())
