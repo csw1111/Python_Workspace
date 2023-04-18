@@ -1,0 +1,445 @@
+import speech_recognition as sr
+from gtts import gTTS
+import playsound
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+import os
+import time
+import ID2 
+
+r=sr.Recognizer()
+text_1=''
+josa=["에","의","을","를","이","가","은","는","서","에서"]
+a=webdriver.Chrome(ChromeDriverManager().install())
+is_login=0
+z=0
+
+def stt():
+    
+    while True:
+        with sr.Microphone() as source:
+            print("말하세요")
+            audio_text= r.listen(source,timeout=3)
+            print("끝났어요")
+
+            try:
+                data= r.recognize_google(audio_text,language="ko-KR")
+                data= act(data)
+                break
+
+            except:
+                speak("이해못했어요")            
+    print(data)
+    return data
+#---------------------------AI목소리---------------------------#
+def speak(text, lang="ko"):#AI목소리
+    tts = gTTS(text=text, lang="ko")
+    filename="AI.mp3"#AI대답 mp3를 각자 다른 주소로 저장하기위함
+    tts.save(filename)#AI대답 저장
+    playsound.playsound(filename)##AI목소리 실행
+    os.remove(filename)
+    # pass
+#----------------처음조사 뺴고 단어마다 리스트로 나누기----------------#
+def act(text_1):
+    for y in range(len(text_1)):
+        if text_1[y][-2:] in josa:
+            text_1[y]=text_1[y][:-2]#조사가 2글자인 경우(예: 에서)text_1[y]를 '에서'를 뺸 나머지를 저장
+            break
+        elif text_1[y][-1] in josa:#조사가 1글자인 경우(예: 는)text_1[y]를 '는'를 뺸 나머지를 저장
+            text_1[y]=text_1[y][:-1]
+            break
+        break
+    return text_1
+
+#-------------------------------자동로그인-------------------------------#   
+def login(ID,PW,is_login):
+    if is_login==1:
+        a.find_element(By.CSS_SELECTOR,'#gnb > div > div > button').click()
+        time.sleep(1)
+        a.find_element(By.CSS_SELECTOR,'#gnb > div > div > div > div > a').click()
+        a.switch_to.window(a.window_handles[1])
+        time.sleep(1)
+        a.find_element(By.NAME,"gnb_uxd").send_keys(ID)
+        time.sleep(1)
+        a.find_element(By.NAME,"gnb_uxx").send_keys(PW)
+        time.sleep(1)
+        a.find_element(By.NAME,"gnb_uxx").send_keys(Keys.ENTER)
+        a.switch_to.window(a.window_handles[0])
+    else:
+        pass
+
+#----------------------------음악 검색----------------------------#
+def search(data):
+    sc=[]#검색할 내용
+
+    for x in range(len(data)):
+        if "검색" not in data[x] and '검색해' not in data[x] and "찾아" not in data[x] and "틀어" not in data[x] and "줘" not in data[x] and '재생' not in data[x] and '재생해' not in data[x]:
+            sc.append(data[x])
+
+        else:
+            sc.pop
+
+    sc = ' '.join(sc)#sc리스트를 문자열로 변환
+    print(sc)
+    a.find_element(By.ID,"sc-fd").send_keys(sc)
+    a.find_element(By.ID,"sc-fd").send_keys(Keys.ENTER)
+    a.find_element(By.ID,"sc-fd").clear()
+    
+#-----------------------ID, PW 정하기--------------------------#
+def IDPW():#ID,PW를 정함
+    speak("몇번째 아이디로 로그인 할까요?")
+    while True:
+        Q = str(stt()).split(" ")
+        Q = "".join(Q)
+        if "첫번째" in Q or "1" in Q or "일" in Q:
+            Q = 1
+            break
+        elif "두번째" in Q or "2" in Q or "이" in Q:
+            Q = 2
+            break
+        elif "세번째" in Q or "3" in Q or "삼" in Q:
+            Q = 3
+            break
+        elif "네번째" in Q or "4" in Q or "사" in Q:
+            Q = 4
+            break
+        elif "다섯번째" in Q or "5" in Q or "오" in Q:
+            Q = 5
+            break
+        elif "여섯번째" in Q or "6" in Q or "육" in Q:
+            Q = 6
+            break
+        elif "일곱번째" in Q or "7" in Q or "칠" in Q:
+            Q = 7
+            break
+        elif "여덟번째" in Q or "8" in Q or "팔" in Q:
+            Q = 8
+            break
+        elif "아홉번째" in Q or "9" in Q or "구" in Q:
+            Q = 9
+            break
+        elif "열번째" in Q or "10" in Q or "십"  in Q:
+            Q = 10
+            break
+        else:
+            pass
+
+    idf = open("IDTotal.txt","rt")
+    id = idf.readlines()
+    id = "".join(id)#문자열로 변환
+    id = id.split(' ')#공백기준으로 리스트 만듬
+    id = id[Q-1]
+    id="".join(id)#문자열로 변환
+    idf.close()
+
+    pwf = open("PWTotal.txt","rt")
+    pw = pwf.readlines()
+    pw = "".join(pw)#문자열로 변환
+    pw = pw.split(' ')#공백기준으로 리스트 만듬
+    pw = pw[Q-1]
+    pw="".join(pw)
+    pwf.close()
+
+    return id,pw
+
+#-------------------가입된 ID인지 확인하기------------------------#
+def RealID():
+    time.sleep(1)
+    name = a.find_element(By.XPATH,'//*[@id="gnb"]/div/div[1]/button').text
+    name ="".join(name)
+    name = list(name)
+    time.sleep(1)
+    if "님" in name:
+        is_login = 1
+    else:
+        try:
+            a.switch_to.window(a.window_handles[1])
+            a.close()
+            a.switch_to.window(a.window_handles[0])
+            a.find_element(By.CSS_SELECTOR,'#gnb > div > div > button').click()#가입된 아이디로 로그인한뒤에 로그인누르기전 창이 떠서 창을 닫고 로그인 실행하기 위한 코드
+        except:
+            pass  
+        speak("가입되지 않은 아이디입니다")
+        print("가입되지 않은 아이디입니다")
+        is_login = 0
+
+    return is_login
+
+#-----------------------로그인 상태일 때----------------------------#
+def IsLogin(id,pw):
+    is_login=int(1)
+    a.refresh()
+
+    speak("무엇을 입력할까요?")
+    data = str(stt()).split(" ")
+    for x in data:#data안에 지니가 있는지 확인
+        if "지니" in x:
+            data =act(data)
+        else:
+            pass
+
+    if "지니" in data[0]:
+        data.remove(data[0])
+        if "마이" and "뮤직" in data or "플레이" and "리스트" in data or "마이" and "리스트" in data or "마이리스트" in data or "플레이리스트" in data or "마이뮤직" in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/div/div[2]/button').click()#마이뮤직 클릭
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="myAlbum"]/a').click()#플레이리스트 클릭
+            
+            #-------------------------------------------------------------마이뮤직 정보 가져오기-------------------------------------------------------------------#
+            Tot= a.find_elements(By.CSS_SELECTOR,"#body-content > div.wrap_md_playlist.music-list-wrap > div.tit-box > span > strong")#마이뮤직 전체 개수를 불러오기
+            Mylist = []#마이뮤직들을 리스트로 모은다
+            for x in Tot:
+                Tot = int(x.text)#마이뮤직 전체 개수를 정수로 변환한다
+        
+            for x in range(Tot):
+                Name = a.find_elements(By.CSS_SELECTOR,"#body-content > div.wrap_md_playlist.music-list-wrap > ul > li:nth-child("+str(x+1)+") > div.item_info > div.title > a")
+                for i in Name:#가저온 결과를 text로 변환한다
+                    Name1 = i.text
+                    Mylist.append(Name1)
+            #-------------------------------------------------------------마이뮤직에 있는 노래 틀기-----------------------------------------------------------------#
+            
+            for x in Mylist:
+                speak(x)
+                print(x)
+            speak("어느것을 틀까요?")
+            M = "".join(str(stt()).split(" "))
+            while M in Mylist:
+                if M in Mylist:
+                    for x in Mylist:
+                        if M == x:
+                            y = Mylist.index(x)
+                            a.find_element(By.XPATH,'//*[@id="body-content"]/div[3]/ul/li['+str(y+1)+']/div[1]/a[2]').click()
+                else:
+                    speak("제대로된 이름을 말하세요")
+                #-----------------------------------------------------------------------------------------------------------------------------------------------------#
+        elif '최신곡' in data or '최신노래' in data or '최신'in data and '노래' in data or '최신' in data and '곡' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[2]/a').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/input').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/a[1]').click()
+            time.sleep(2)
+            a.switch_to.window(a.window_handles[1])     
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        elif '탑' in data and '200' in data or '탑200' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[1]/a').click()
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[6]/div/div[2]/div[1]/a').click()
+            time.sleep(1)
+            a.switch_to.window(a.window_handles[1])
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        else:
+            search(data)
+#--------------------------------------------------------------data에 지니가 없을 때--------------------------------------------------------------#
+    else:
+        if "마이" and "뮤직" in data or "플레이" and "리스트" in data or "마이" and "리스트" in data or "마이리스트" in data or "플레이리스트" in data or "마이뮤직" in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/div/div[2]/button').click()#마이뮤직 클릭
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="myAlbum"]/a').click()#플레이리스트 클릭
+            
+            #-------------------------------------------------------------마이뮤직 정보 가져오기-------------------------------------------------------------------#
+            Tot= a.find_elements(By.CSS_SELECTOR,"#body-content > div.wrap_md_playlist.music-list-wrap > div.tit-box > span > strong")#마이뮤직 전체 개수를 불러오기
+            Mylist = []#마이뮤직들을 리스트로 모은다
+            for x in Tot:
+                Tot = int(x.text)#마이뮤직 전체 개수를 정수로 변환한다
+        
+            for x in range(Tot):
+                Name = a.find_elements(By.CSS_SELECTOR,"#body-content > div.wrap_md_playlist.music-list-wrap > ul > li:nth-child("+str(x+1)+") > div.item_info > div.title > a")
+                for i in Name:#가저온 결과를 text로 변환한다
+                    Name1 = i.text
+                    Mylist.append(Name1)
+            #-------------------------------------------------------------마이뮤직에 있는 노래 틀기-----------------------------------------------------------------#
+            
+            for x in Mylist:
+                speak(x)
+                print(x)
+            speak("어느것을 틀까요?")
+            while True:
+                M = "".join(str(stt()).split(" "))
+                if M in Mylist:
+                    for x in Mylist:
+                        if M == x:
+                            y = Mylist.index(x)
+                            a.find_element(By.XPATH,'//*[@id="body-content"]/div[3]/ul/li['+str(y+1)+']/div[1]/a[2]').click()
+                            break
+                    break
+                else:
+                    speak("제대로된 이름을 말하세요")
+                #-----------------------------------------------------------------------------------------------------------------------------------------------------#
+        elif '최신곡' in data or '최신노래' in data or '최신'in data and '노래' in data or '최신' in data and '곡' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[2]/a').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/input').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/a[1]').click()
+            time.sleep(2)
+            a.switch_to.window(a.window_handles[1])     
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        elif '탑' in data and '200' in data or '탑200' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[1]/a').click()
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[6]/div/div[2]/div[1]/a').click()
+            time.sleep(1)
+            a.switch_to.window(a.window_handles[1])
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        else:
+            time.sleep(1)
+            search(data)
+           
+    return is_login,id,pw
+
+#-----------------------로그아웃 상태일 때---------------------------#
+def UnLogin():
+    is_login = int(0)
+    a.refresh()
+
+    speak("무엇을 입력할까요?")
+    data = str(stt()).split(" ")
+    for x in data:#data안에 지니가 있는지 확인
+        if "지니" in x:
+            data =act(data)
+        else:
+            pass
+
+    if "지니"  in data[0]:
+        data.remove(data[0])
+        if "마이" and "뮤직" in data or "플레이" and "리스트" in data or "마이" and "리스트" in data or "마이리스트" in data or "플레이리스트" in data or "마이뮤직" in data:
+            speak("로그아웃 상태 입니다")
+            print("로그아웃 상태 입니다.")
+            id, pw, is_login = LOGIN()
+            login(id,pw,is_login)
+            is_login = RealID()
+
+            if is_login == 1:
+                is_login,id,pw = IsLogin(id,pw)
+            else:
+                is_login = UnLogin()
+        elif '최신곡' in data or '최신노래' in data or '최신'in data and '노래' in data or '최신' in data and '곡' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[2]/a').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/input').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/a[1]').click()
+            time.sleep(2)
+            a.switch_to.window(a.window_handles[1])     
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        elif '탑' in data and '200' in data or '탑200' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[1]/a').click()
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[6]/div/div[2]/div[1]/a').click()
+            time.sleep(1)
+            a.switch_to.window(a.window_handles[1])
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        else:
+            search(data)
+
+    #-------------------data에 지니가 없을 때-----------------------#
+    else:
+        if "마이" and "뮤직" in data or "플레이" and "리스트" in data or "마이" and "리스트" in data or "마이리스트" in data or "플레이리스트" in data or "마이뮤직" in data:
+            speak("로그아웃 상태 입니다")
+            print("로그아웃 상태 입니다.")
+            id, pw, is_login = LOGIN()
+            login(id,pw,is_login)
+            is_login = RealID()
+
+            if is_login == 1:
+                is_login,id,pw = IsLogin(id,pw)
+            else:
+                is_login = UnLogin()
+        elif '최신곡' in data or '최신노래' in data or '최신'in data and '노래' in data or '최신' in data and '곡' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[2]/a').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/input').click()
+            time.sleep(2)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[4]/div/div[1]/a[1]').click()
+            time.sleep(2)
+            a.switch_to.window(a.window_handles[1])     
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        elif '탑' in data and '200' in data or '탑200' in data:
+            a.find_element(By.XPATH,'//*[@id="gnb"]/ul/li[1]/a').click()
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="body-content"]/div[6]/div/div[2]/div[1]/a').click()
+            time.sleep(1)
+            a.switch_to.window(a.window_handles[1])
+            time.sleep(1)
+            a.find_element(By.XPATH,'//*[@id="fp-audio"]/div/div[1]/div[3]/a').click()
+        else:
+            search(data)
+
+    return is_login
+#-----------------------로그인하기-------------------------#
+def LOGIN():
+    speak("로그인을 하시겠습니까?")
+    while True:
+        Login = "".join(str(stt()).split(" "))
+        if "응" == Login or "어" == Login or "할게" == Login or "할 거야" == Login or "해"in Login:
+            id, pw= IDPW()
+            print(id)
+            print(pw)
+            is_login=int(1)
+            break
+
+        elif "아니" == Login or "노"== Login or "안 해"== Login or "안 할 거야"== Login:
+            is_login=int(0)
+            id=0
+            pw=0
+            break
+        else:
+            pass
+    
+    return id,pw,is_login
+
+#-----------------------------------------------실행------------------------------------------------------#
+
+a.get(r"https://www.genie.co.kr")
+id, pw, is_login = LOGIN()
+while True:
+    if is_login ==0:
+        break
+    else:
+        is_login = login(id,pw,is_login)
+        is_login = RealID()
+        if is_login == 1:
+            break
+        else:
+            id,pw,is_login = LOGIN()
+while True:
+    try:
+        if is_login ==1:
+            print("로그인상태")
+            is_login,id,pw = IsLogin(id,pw)
+        else:
+            print("로그아웃 상태")
+            is_login = UnLogin()
+    #--------------------다시 본인확인 창이 뜨면 닫기-------------------------------#
+    except:
+        a.switch_to.window(a.window_handles[1])
+        if a.current_url == 'https://www.genie.co.kr/member/info/popMyInfoPwdChk?forward_url=/member/info/myInfoMod':#본인확인
+            a.close()
+        else:
+            pass
+    
+    #-------------종료----------------#
+    speak("종료할까요?")
+    data = "".join(str(stt()).split(" "))
+    if "종료" in data or "어" in data:
+        speak("종료하겠습니다")
+        print("종료하겠습니다")
+        break
+    elif "로그인" in data:
+        if is_login==1:
+            pass
+        else:
+            id,pw,is_login = LOGIN()
+            login(id,pw,is_login)
+            if is_login ==1:
+                is_login = RealID()
+            else:
+                continue
+
+print("종료되었습니다.")
